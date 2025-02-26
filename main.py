@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 import time
 import hashlib
@@ -14,6 +15,10 @@ parser = argparse.ArgumentParser(description="Bitcoin Mining Simulation")
 parser.add_argument("--miner", type=str, default="Capy", help="ชื่อของ miner (default: Capy)")
 parser.add_argument("--threads", type=int, default=4, help="จำนวน threads ที่ใช้ขุด (default: 4)")
 args = parser.parse_args()
+
+# ✅ แสดงข้อมูล Miner และจำนวน Threads ก่อนเริ่มขุด
+print(f"\n🚀 Starting Miner: {args.miner}")
+print(f"🔄 Using {args.threads} Threads\n")
 
 # ✅ โหลด ABI จากไฟล์ (ตรวจสอบก่อนว่าไฟล์มีอยู่)
 abi_file = "abi.json"

@@ -1,2 +1,4 @@
 .venv
 currentblock.json
+test.py
+wallet.json

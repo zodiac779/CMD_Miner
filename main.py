@@ -136,8 +136,10 @@ async def send_transaction(provider, signer, tx_data):
                 tx_receipt = provider.eth.get_transaction_receipt(tx_hash)
                 if tx_receipt:
                     confirmations = provider.eth.block_number - tx_receipt['blockNumber'] + 1
+                    sys.stdout.write("\033[K")
                     print(f"🛠️ Confirmations: {confirmations}/3", end="\r", flush=True)
                     if confirmations >= 1:
+                        sys.stdout.write("\033[K")
                         print(f"\n✅ Transaction Confirmed with {confirmations} Confirmations!")
                         break
             except:
@@ -145,6 +147,7 @@ async def send_transaction(provider, signer, tx_data):
                 continue
 
             if time.time() - start_time > 60:
+                sys.stdout.write("\033[K")
                 print("\n🔄 Transaction stuck. Retrying...")
                 return await send_transaction(provider, signer, tx_data)
 

@@ -67,24 +67,33 @@ def get_current_block():
         
 #         await asyncio.sleep(0.5)
 
+# ฟังก์ชันช่วยแปลง hash rate ให้ดูอ่านง่ายขึ้น
+def format_hash_rate(rate):
+    if rate >= 1e6:
+        return f"{rate / 1e6:.2f} MH/s"
+    elif rate >= 1e3:
+        return f"{rate / 1e3:.2f} kH/s"
+    else:
+        return f"{rate:.2f} H/s"
+    
 # ✅ ฟังก์ชันคำนวณ Hash โดยใช้ sha256
 def sha256(block_number, nonce):
     data = encode(['uint256', 'uint256'], [block_number, nonce])
-    return hashlib.sha256(data).hexdigest()
+    return hashlib.sha256(data).hexdigest()  # ✅ คืนค่าเป็น Hex String
 
 # ✅ ฟังก์ชันสำหรับ Hash Worker (ใช้ Multi-threading)
-def hash_worker(difficulty, start_nonce, step, block_number):
-    minerDiff = int(2 ** (256 - difficulty))
-    target = minerDiff.to_bytes(32, 'big').hex()
-    
+def hash_worker(difficulty, start_nonce, step, block_number, thread_name):
+    target = int(2 ** (256 - difficulty))  # ✅ ใช้ `int` ตรงๆ ไม่ต้องแปลงเป็น bytes
+
     nonce = start_nonce
     start_time = time.time()
     last_display_time = start_time  # ✅ กำหนดค่าเริ่มต้นก่อนใช้
 
     while True:
         hash_val = sha256(block_number, nonce)
+        hash_int = int(hash_val, 16)  # ✅ แปลงจาก Hex String เป็น Integer
 
-        if hash_val < target:  # ✅ เปรียบเทียบ int กับ int
+        if hash_int < target:  # ✅ เปรียบเทียบ int กับ int
             elapsed_time = time.time() - start_time
             result_queue.put((nonce, hash_val))
             print(f"\n✅ Block Mined! Nonce: {nonce}, Hash: {hash_val}")
@@ -96,7 +105,10 @@ def hash_worker(difficulty, start_nonce, step, block_number):
         # ✅ อัปเดต Hash Rate ทุก 1 วินาที
         current_time = time.time()
         if current_time - last_display_time > 1:
-            print(f"⚡ Current hash rate: {nonce / (current_time - start_time):.2f} H/s", end="\r", flush=True)
+            if args.threads > 1:
+                print(f"⚡Thread {thread_name} Current hash rate: {format_hash_rate((nonce - start_nonce) / (current_time - start_time))}")
+            else:
+                print(f"⚡Thread {thread_name} Current hash rate: {format_hash_rate((nonce - start_nonce) / (current_time - start_time))}", end="\r", flush=True)
             last_display_time = current_time  # ✅ อัปเดตค่าล่าสุด
 
 # ✅ ฟังก์ชันขุด Block โดยใช้ ThreadPoolExecutor
@@ -107,7 +119,7 @@ def mine_block(difficulty, block_number, start_nonce=0):
 
     for i in range(num_threads):
         thread_nonce_start = start_nonce + i * (nonce_range // num_threads)  # ✅ กระจาย nonce ให้แต่ละ thread
-        t = threading.Thread(target=hash_worker, args=(difficulty, thread_nonce_start, num_threads, block_number))
+        t = threading.Thread(target=hash_worker, args=(difficulty, thread_nonce_start, num_threads, block_number, i))
         threads.append(t)
         t.start()
 
